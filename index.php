@@ -1,3 +1,4 @@
+<?php include 'file-functions.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -207,23 +208,56 @@
     <hr>
     <div id="lf_holder">
       <h4 class="lf_title">Carpetas</h4>
-      <div class="lf_folders"> 
-        <div class="lf_folder"><i class="lf_folder_icon fa fa-folder-o" aria-hidden="true"></i><span class="lf_folder_name">Ejemplo</span></div>
-        <div class="lf_folder"><i class="lf_folder_icon fa fa-folder-o" aria-hidden="true"></i><span class="lf_folder_name">Ejemplo</span></div>
-        <div class="lf_folder"><i class="lf_folder_icon fa fa-folder-o" aria-hidden="true"></i><span class="lf_folder_name">Ejemplo</span></div>
-        <div class="lf_folder"><i class="lf_folder_icon fa fa-folder-o" aria-hidden="true"></i><span class="lf_folder_name">Ejemplo</span></div>
-        <div class="lf_folder"><i class="lf_folder_icon fa fa-folder-o" aria-hidden="true"></i><span class="lf_folder_name">Ejemplo</span></div>
-        <div class="lf_folder"><i class="lf_folder_icon fa fa-folder-o" aria-hidden="true"></i><span class="lf_folder_name">Ejemplo</span></div>
-        <div class="lf_folder"><i class="lf_folder_icon fa fa-folder-o" aria-hidden="true"></i><span class="lf_folder_name">Ejemplo</span></div>
+      <div class="lf_folders">
+        <?php
+          $file = "test";
+          //$a = scandir($dir,1);
+          //print_r($a);
+          if (is_dir($file)) {
+              $directory = $file;
+              $result = [];
+              $files = array_diff(scandir($directory), ['.','..']);
+              foreach ($files as $entry) if (!is_entry_ignored($entry, $allow_show_folders, $hidden_extensions)) {
+              $i = $directory . '/' . $entry;
+              $stat = stat($i);
+                    $result[] = [
+                      //'mtime' => $stat['mtime'],
+                      //'size' => $stat['size'],
+                      'name' => basename($i),
+                      'path' => preg_replace('@^\./@', '', $i),
+                      'is_dir' => is_dir($i)
+                      //'is_deleteable' => $allow_delete && ((!is_dir($i) && is_writable($directory)) ||
+                      //                                               (is_dir($i) && is_writable($directory) && is_recursively_deleteable($i))),
+                      //'is_readable' => is_readable($i),
+                      //'is_writable' => is_writable($i),
+                      //'is_executable' => is_executable($i),
+                    ];
+                }
+            } else {
+              echo ("Not a Directory");
+            }
+            foreach ($result as $key => $lf_item) {
+                if ($lf_item['is_dir']) {
+                  echo '<div class="lf_folder" data-path="'.$lf_item['path'].'"><i class="lf_folder_icon fa fa-folder-o" aria-hidden="true"></i><span class="lf_folder_name">'.$lf_item['name'].'</span></div>';
+                }
+            }
+        ?>
       </div>
       <h4 class="lf_title">Archivos</h4>
-      <div class="lf_files"> 
-        <div class="lf_file">
-          <div class="lf_file_preview file_type"></div>
-          <div class="lf_file_name_holder">
-            <i class="lf_file_icon fa fa-file-o" aria-hidden="true"></i><span class="lf_file_name">Ejemplo</span>
-          </div>
-      </div>
+      <div class="lf_files">
+        <?php
+          foreach ($result as $key => $lf_item) {
+                if (!$lf_item['is_dir']) {
+                  echo '
+                      <div class="lf_file" data-path="'.$lf_item['path'].'">
+                          <div class="lf_file_preview file_type"></div>
+                          <div class="lf_file_name_holder">
+                            <i class="lf_file_icon fa fa-file-o" aria-hidden="true"></i><span class="lf_file_name">'.$lf_item['name'].'</span>
+                          </div>
+                      </div>';
+                }
+            }
+        ?>
     </div>
   </div>
 </div>
