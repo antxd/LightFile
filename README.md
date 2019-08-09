@@ -1,2 +1,2 @@
 # LightFile
-Small and practice file manager and drag and drop uploader
+Small and practice file manager with drag and drop uploader, in development
