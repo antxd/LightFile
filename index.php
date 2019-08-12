@@ -1,4 +1,4 @@
-<?php include 'file-functions.php'; ?>
+<?php include 'file-functions.php';$url_base = 'http://localhost:8888/LightFile/'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -153,13 +153,19 @@
     border-radius: 4px;
     margin: 5px;
     width: calc(33.33% - 15px);
+    transition: all .3s;
 }
 .lf_file:hover{
-    box-shadow: rgba(57, 90, 100, 0.1) 0px 2px 9px 0px;
+    box-shadow: rgba(57, 90, 100, 0.3) 0px 2px 9px 0px;
+}
+.lf_file_selected{
+  box-shadow: rgba(57, 90, 100, 0.6) 0px 2px 9px 0px !important;
 }
 .lf_file_preview {
     padding-top: 50%;
     background-color: #ccc;
+    background-size: cover;
+    background-position: center;
 }
 .lf_file_icon {
     width: 25px;
@@ -206,11 +212,16 @@
       </div>
     </div>
     <hr>
+    Ruta:  <a href="media" class="route_handler">/Inicio</a>  
+    <span class="lf_route_position">
+   
+    </span>
+    <hr>
     <div id="lf_holder">
       <h4 class="lf_title">Carpetas</h4>
       <div class="lf_folders">
         <?php
-          $file = "test";
+          $file = "media";
           //$a = scandir($dir,1);
           //print_r($a);
           if (is_dir($file)) {
@@ -221,16 +232,19 @@
               $i = $directory . '/' . $entry;
               $stat = stat($i);
                     $result[] = [
-                      //'mtime' => $stat['mtime'],
-                      //'size' => $stat['size'],
-                      'name' => basename($i),
-                      'path' => preg_replace('@^\./@', '', $i),
-                      'is_dir' => is_dir($i)
-                      //'is_deleteable' => $allow_delete && ((!is_dir($i) && is_writable($directory)) ||
-                      //                                               (is_dir($i) && is_writable($directory) && is_recursively_deleteable($i))),
-                      //'is_readable' => is_readable($i),
-                      //'is_writable' => is_writable($i),
-                      //'is_executable' => is_executable($i),
+                                'mtime' => $stat['mtime'],
+                                'mtype' => mime_content_type($i),
+                                'size' => $stat['size'],
+                                'name' => basename($i),
+                                'path' => preg_replace('@^\./@', '', $i),
+                                'url' => $url_base.$i,
+                                'urlenc' => urlencode($i),
+                                'is_dir' => is_dir($i),
+                                'is_deleteable' => $allow_delete && ((!is_dir($i) && is_writable($directory)) ||
+                                                                               (is_dir($i) && is_writable($directory) && is_recursively_deleteable($i))),
+                                'is_readable' => is_readable($i),
+                                'is_writable' => is_writable($i),
+                                'is_executable' => is_executable($i),
                     ];
                 }
             } else {
@@ -238,7 +252,9 @@
             }
             foreach ($result as $key => $lf_item) {
                 if ($lf_item['is_dir']) {
-                  echo '<div class="lf_folder" data-path="'.$lf_item['path'].'"><i class="lf_folder_icon fa fa-folder-o" aria-hidden="true"></i><span class="lf_folder_name">'.$lf_item['name'].'</span></div>';
+                  echo '<div class="lf_folder" data-path="'.$lf_item['path'].'" data-folfer="'.$lf_item['urlenc'].'">
+                          <i class="lf_folder_icon fa fa-folder-o" aria-hidden="true"></i><span class="lf_folder_name">'.$lf_item['name'].'</span>
+                        </div>';
                 }
             }
         ?>
@@ -248,18 +264,37 @@
         <?php
           foreach ($result as $key => $lf_item) {
                 if (!$lf_item['is_dir']) {
-                  echo '
-                      <div class="lf_file" data-path="'.$lf_item['path'].'">
-                          <div class="lf_file_preview file_type"></div>
-                          <div class="lf_file_name_holder">
-                            <i class="lf_file_icon fa fa-file-o" aria-hidden="true"></i><span class="lf_file_name">'.$lf_item['name'].'</span>
-                          </div>
-                      </div>';
+                    $mime_images = array('image/png','image/jpeg','image/jpeg','image/jpeg','image/gif','image/bmp','image/vnd.microsoft.icon','image/tiff','image/tiff','image/svg+xml','svgz' => 'image/svg+xml');
+         
+                    if(in_array($lf_item['mtype'],$mime_images)) {
+                      echo '
+                            <div class="lf_file" data-path="'.$lf_item['path'].'" data-fileurl="'.$lf_item['url'].'">
+                                <div class="lf_file_preview file_type" style="background-image: url('.$lf_item['url'].');"></div>
+                                <div class="lf_file_name_holder">
+                                  <i class="lf_file_icon fa fa-file-o" aria-hidden="true"></i><span class="lf_file_name">'.$lf_item['name'].'</span>
+                                </div>
+                            </div>';
+                    }else{
+                      echo '
+                        <div class="lf_file" data-path="'.$lf_item['path'].'" data-fileurl="'.$lf_item['url'].'">
+                            <div class="lf_file_name_holder">
+                              <i class="lf_file_icon fa fa-file-o" aria-hidden="true"></i><span class="lf_file_name">'.$lf_item['name'].'</span>
+                            </div>
+                        </div>';
+                    }
                 }
             }
         ?>
     </div>
   </div>
+  <div class="lf_header">
+      <div class="lf_header_left">
+        <h2 class="lf_title"></h2>
+      </div>
+      <div class="lf_header_right">
+          <button type="button" class="lf_button"><i class="fa fa-check" aria-hidden="true"></i> Usar este archivo</button>
+      </div>
+    </div>
 </div>
 <script src="jquery.min.js"></script>
 <script>
@@ -290,6 +325,31 @@ jQuery(document).ready(function($){
     e.preventDefault()
     $($(this).attr('href')).modal();
   })
+  $(document).on('click','.lf_folder', function(e){
+      console.log('change folder to: '+$(this).data('folfer'))
+      var path = $(this).data('path'), folder = $(this).data('folfer');
+      $.get("http://localhost:8888/LightFile/file-functions.php?do=list&file="+folder, function(data, status){
+          //alert("Data: " + data + "\nStatus: " + status);
+          $('.lf_route_position').hide().html('<a href="'+folder+'" class="route_handler">/'+path+'</a>  ').fadeIn()
+          $('#lf_holder').hide().html(data).fadeIn()
+      });
+  })
+  $(document).on('click','.route_handler', function(e){
+    e.preventDefault()
+      //console.log('change folder to: '+$(this).data('folfer'))
+      //var path = $(this).data('path');
+      $.get("http://localhost:8888/LightFile/file-functions.php?do=list&file="+$(this).attr('href'), function(data, status){
+          //alert("Data: " + data + "\nStatus: " + status);
+          $('.lf_route_position').hide().html('').fadeIn()
+          $('#lf_holder').hide().html(data).fadeIn()
+      });
+  })
+  $(document).on('click','.lf_file', function(e){
+    e.preventDefault()
+    $('.lf_file').removeClass('lf_file_selected')
+    $(this).addClass('lf_file_selected')
+  })
+  
 })
 </script>
 </body>
