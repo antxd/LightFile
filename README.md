@@ -7,17 +7,17 @@ Small and practice file manager and drag and drop uploader
 #How to use
 
 ```
-	/* first param open te file manager, second param are method to use the url of file selected
-        example:
-        bg    -> put as background image the url of file selected
-        val   -> change value of input
-        event -> fire a custom event and pass the url as argument
-    */
-    $('#media').lightfile('http://localhost:8888/LightFile/file-functions.php','open', {'bg':'.post','val':'#post','event':'media_selected'});
-    //example of return the url as argument
-    $( document ).on( "media_selected", function( event, arg ) {
-          console.log( arg );
-    });
+/* first param open te file manager, second param are method to use the url of file selected
+    example:
+    bg    -> put as background image the url of file selected
+    val   -> change value of input
+    event -> fire a custom event and pass the url as argument
+*/
+$('#media').lightfile('http://localhost:8888/LightFile/file-functions.php','open', {'bg':'.post','val':'#post','event':'media_selected'});
+//example of return the url as argument
+$( document ).on( "media_selected", function( event, arg ) {
+      console.log( arg );
+});
 ```
 
 ## Screenshots
