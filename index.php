@@ -54,8 +54,9 @@
         font-size: 40px;
         color: #fff;
         right: -55px;
-        top: -55px;;
+        top: -30px;
         cursor: pointer;
+        text-decoration: none;
     }
 
 
@@ -159,6 +160,7 @@
     box-shadow: rgba(57, 90, 100, 0.3) 0px 2px 9px 0px;
 }
 .lf_file_selected{
+  background-color: #d4d9dd;
   box-shadow: rgba(57, 90, 100, 0.6) 0px 2px 9px 0px !important;
 }
 .lf_file_preview {
@@ -178,27 +180,18 @@
     display: inline-block;
     font-size: 15px;
 }
-/*
-.lf_folder {
-    display: inline-flex;
-    -webkit-box-align: center;
-    align-items: center;
-    height: 40px;
-    justify-content: space-evenly;
-    cursor: pointer;
-    border-width: 1px;
-    border-style: solid;
-    border-color: rgb(236, 239, 241);
-    border-image: initial;
-    border-radius: 4px;
-    margin: 5px;
-    width: calc(33.33% - 15px);
+.lf_button.finish_selection.lf_file_selected {
+    background: #d4d9dd;
 }
-*/
   </style>
 </head>
 <body>
-<div class="modal" id="modal">
+<div class="post" style="background-size: cover;height: 100px;width: 100px">
+  
+</div>
+<input type="text" id="post" value="">
+<button type="button" class="test_btn">Abrir Media</button>
+<div class="modal" id="media">
   <div class="modal-overlay"></div>
   <div class="modal-content">
     <a href="#" class="modal-close">X</a>
@@ -227,7 +220,8 @@
           if (is_dir($file)) {
               $directory = $file;
               $result = [];
-              $files = array_diff(scandir($directory), ['.','..']);
+              //$files = array_diff(scandir($directory), ['.','..']);
+              $files = array_diff(preg_grep('/^([^.])/', scandir($directory)), ['.','..']);
               foreach ($files as $entry) if (!is_entry_ignored($entry, $allow_show_folders, $hidden_extensions)) {
               $i = $directory . '/' . $entry;
               $stat = stat($i);
@@ -236,7 +230,8 @@
                                 'mtype' => mime_content_type($i),
                                 'size' => $stat['size'],
                                 'name' => basename($i),
-                                'path' => preg_replace('@^\./@', '', $i),
+                                //'path' => preg_replace('@^\./@', '', $i),
+                                'path' => $entry,
                                 'url' => $url_base.$i,
                                 'urlenc' => urlencode($i),
                                 'is_dir' => is_dir($i),
@@ -292,16 +287,17 @@
         <h2 class="lf_title"></h2>
       </div>
       <div class="lf_header_right">
-          <button type="button" class="lf_button"><i class="fa fa-check" aria-hidden="true"></i> Usar este archivo</button>
+          <button type="button" class="lf_button finish_selection"><i class="fa fa-check" aria-hidden="true"></i> Usar este archivo</button>
       </div>
     </div>
 </div>
+</div>
+
 <script src="jquery.min.js"></script>
 <script>
   // jQuery Plugins
 (function ( $ ) {
-  // MediaCore Modal
-  $.fn.modal = function(param = 'open') {
+  $.fn.lightfile = function(ajaxurl = "", param = 'open', target = null) {
       //this.css( "color", "green" );
       if (param == 'open') {
         this.fadeIn().addClass('modal_open')
@@ -315,41 +311,64 @@
         e.preventDefault()
         $(this).closest('.modal').fadeOut().removeClass('modal_open')
       })
+      
+      $(document).on('click','.lf_folder', function(e){
+          console.log('change folder to: '+$(this).data('folfer'))
+          var path = $(this).data('path'), folder = $(this).data('folfer');
+          $.get(ajaxurl+"?do=list&file="+folder, function(data, status){
+              $('.lf_route_position').hide().html('<a href="'+folder+'" class="route_handler">/'+path+'</a>  ').fadeIn()
+              $('#lf_holder').hide().html(data).fadeIn()
+          });
+      })
+      $(document).on('click','.route_handler', function(e){
+        e.preventDefault()
+          $.get(ajaxurl+"?do=list&file="+$(this).attr('href'), function(data, status){
+              $('.lf_route_position').hide().html('').fadeIn()
+              $('#lf_holder').hide().html(data).fadeIn()
+          });
+      })
+      $(document).on('click','.lf_file', function(e){
+        e.preventDefault()
+        $('.lf_file').removeClass('lf_file_selected')
+        $(this).addClass('lf_file_selected')
+        $('.finish_selection').addClass('lf_file_selected').attr('data-url',$(this).data('fileurl'))
+      })
+
+      this.find('.finish_selection').click(function(){
+        for(var i in target) {
+         // console.log(target[i]);
+          if (i == 'bg') {
+            $(target[i]).css('background-image','url('+$(this).attr('data-url')+')')
+          }
+          if (i == 'val') {
+            $(target[i]).val($(this).attr('data-url'))
+          }
+          if (i == 'event') {
+              $( document ).trigger( target[i], [$(this).attr('data-url')] );
+          }
+        }
+        $(this).closest('.modal').fadeOut().removeClass('modal_open')
+        
+      })
+      
       return this;
   };
 }( jQuery ));
 
 jQuery(document).ready(function($){
-  $('#modal').modal();
-  $('.open_modal').click(function(e){
-    e.preventDefault()
-    $($(this).attr('href')).modal();
+  $('.test_btn').click(function(e){
+    /* first param open te file manager, second param are method to use the url of file selected
+        example:
+        bg    -> put as background image the url of file selected
+        val   -> change value of input
+        event -> fire a custom event and pass the url as argument
+    */
+    $('#media').lightfile('http://localhost:8888/LightFile/file-functions.php','open', {'bg':'.post','val':'#post','event':'media_selected'});
+    //example of return the url as argument
+    $( document ).on( "media_selected", function( event, arg ) {
+          console.log( arg );
+    });
   })
-  $(document).on('click','.lf_folder', function(e){
-      console.log('change folder to: '+$(this).data('folfer'))
-      var path = $(this).data('path'), folder = $(this).data('folfer');
-      $.get("http://localhost:8888/LightFile/file-functions.php?do=list&file="+folder, function(data, status){
-          //alert("Data: " + data + "\nStatus: " + status);
-          $('.lf_route_position').hide().html('<a href="'+folder+'" class="route_handler">/'+path+'</a>  ').fadeIn()
-          $('#lf_holder').hide().html(data).fadeIn()
-      });
-  })
-  $(document).on('click','.route_handler', function(e){
-    e.preventDefault()
-      //console.log('change folder to: '+$(this).data('folfer'))
-      //var path = $(this).data('path');
-      $.get("http://localhost:8888/LightFile/file-functions.php?do=list&file="+$(this).attr('href'), function(data, status){
-          //alert("Data: " + data + "\nStatus: " + status);
-          $('.lf_route_position').hide().html('').fadeIn()
-          $('#lf_holder').hide().html(data).fadeIn()
-      });
-  })
-  $(document).on('click','.lf_file', function(e){
-    e.preventDefault()
-    $('.lf_file').removeClass('lf_file_selected')
-    $(this).addClass('lf_file_selected')
-  })
-  
 })
 </script>
 </body>

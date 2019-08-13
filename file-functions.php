@@ -77,7 +77,8 @@ if($_GET['do'] == 'list') {
 	if (is_dir($file)) {
 		$directory = $file;
 		$result = [];
-		$files = array_diff(scandir($directory), ['.','..']);
+		//$files = array_diff(scandir($directory), ['.','..']);
+		$files = array_diff(preg_grep('/^([^.])/', scandir($directory)), ['.','..']);
 		foreach ($files as $entry) if (!is_entry_ignored($entry, $allow_show_folders, $hidden_extensions)) {
 		$i = $directory . '/' . $entry;
 		$stat = stat($i);
@@ -86,7 +87,8 @@ if($_GET['do'] == 'list') {
 	        	'mtype' => mime_content_type($i),
 	        	'size' => $stat['size'],
 	        	'name' => basename($i),
-	        	'path' => preg_replace('@^\./@', '', $i),
+	        	//'path' => preg_replace('@^\./@', '', $i),
+	        	'path' => $entry,
 	        	'url' => $url_base.$i,
 	        	'urlenc' => urlencode($i),
 	        	'is_dir' => is_dir($i),
