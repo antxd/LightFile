@@ -55,25 +55,26 @@ $tmp_dir = dirname($_SERVER['SCRIPT_FILENAME']);
 if(DIRECTORY_SEPARATOR==='\\') $tmp_dir = str_replace('/',DIRECTORY_SEPARATOR,$tmp_dir);
 $tmp = get_absolute_path($tmp_dir . '/' .$_REQUEST['file']);
 
-if($tmp === false)
-	err(404,'File or Directory Not Found');
-if(substr($tmp, 0,strlen($tmp_dir)) !== $tmp_dir)
-	err(403,"Forbidden");
-if(strpos($_REQUEST['file'], DIRECTORY_SEPARATOR) === 0)
-	err(403,"Forbidden");
+//if($tmp === false)
+//	err(404,'File or Directory Not Found');
+//if(substr($tmp, 0,strlen($tmp_dir)) !== $tmp_dir)
+//	err(403,"Forbidden");
+//if(strpos($_REQUEST['file'], DIRECTORY_SEPARATOR) === 0)
+//	err(403,"Forbidden");
 
 
-if(!$_COOKIE['_sfm_xsrf'])
+/*if(!$_COOKIE['_sfm_xsrf'])
 	setcookie('_sfm_xsrf',bin2hex(openssl_random_pseudo_bytes(16)));
 if($_POST) {
 	if($_COOKIE['_sfm_xsrf'] !== $_POST['xsrf'] || !$_POST['xsrf'])
 		err(403,"XSRF Failure");
-}
+}*/
 
 $file = $_REQUEST['file'] ?: '.';
 //var_dump($file);
 //var_dump($_REQUEST['file']);
 if($_GET['do'] == 'list') {
+	//var_dump($_REQUEST['file']);die();
 	if (is_dir($file)) {
 		$directory = $file;
 		$result = [];
@@ -143,12 +144,17 @@ if($_GET['do'] == 'list') {
 	}
 	//echo json_encode(['success' => true, 'is_writable' => is_writable($file), 'results' => $result]);
 	exit;
-} elseif ($_POST['do'] == 'delete') {
+}
+
+
+if ($_POST['do'] == 'delete') {
 	if($allow_delete) {
 		rmrf($file);
 	}
 	exit;
-} elseif ($_POST['do'] == 'mkdir' && $allow_create_folder) {
+} 
+
+if ($_POST['do'] == 'mkdir' && $allow_create_folder) {
 	// don't allow actions outside root. we also filter out slashes to catch args like './../outside'
 	$dir = $_POST['name'];
 	$dir = str_replace('/', '', $dir);
@@ -157,14 +163,18 @@ if($_GET['do'] == 'list') {
 	chdir($file);
 	@mkdir($_POST['name']);
 	exit;
-} elseif ($_POST['do'] == 'upload' && $allow_upload) {
+} 
+if ($_POST['do'] == 'upload' && $allow_upload) {
+	//echo "yey";
+	var_dump($_POST);die();
 	foreach($disallowed_extensions as $ext)
 		if(preg_match(sprintf('/\.%s$/',preg_quote($ext)), $_FILES['file_data']['name']))
 			err(403,"Files of this type are not allowed.");
 
 	$res = move_uploaded_file($_FILES['file_data']['tmp_name'], $file.'/'.$_FILES['file_data']['name']);
 	exit;
-} elseif ($_GET['do'] == 'download') {
+} 
+if ($_GET['do'] == 'download') {
 	$filename = basename($file);
 	$finfo = finfo_open(FILEINFO_MIME_TYPE);
 	header('Content-Type: ' . finfo_file($finfo, $file));

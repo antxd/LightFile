@@ -10,6 +10,10 @@
   <style type="text/css">
     body{
       font-family: 'Nunito', sans-serif;
+      color: #000;
+    }
+    button{
+      color: #000;
     }
     .modal {
         display: none;
@@ -103,6 +107,7 @@
     border-radius: 4px;
     padding: 10px;
     -webkit-appearance: none;
+    background: #fff;
 }
 .lf_button:hover {
      box-shadow: rgba(57, 90, 100, 0.1) 0px 2px 9px 0px;
@@ -183,6 +188,46 @@
 .lf_button.finish_selection.lf_file_selected {
     background: #d4d9dd;
 }
+
+/*UP*/
+.dragdrop {
+    height: 100%;
+    width: 100%;
+    margin: 0 auto;
+    display: none;
+}
+.dragdrop.drag-on .upload-area{
+    background: #ccc;
+}
+.upload-area{
+    width: 70%;
+    height: 300px;
+    border: 2px solid lightgray;
+    border-radius: 3px;
+    margin: 0 auto;
+    margin-top: 100px;
+    text-align: center;
+    overflow: auto;
+}
+
+.upload-area:hover{
+    cursor: pointer;
+}
+
+.upload-area h1 {
+    text-align: center;
+    font-weight: normal;
+    font-family: sans-serif;
+    line-height: 45px;
+    color: darkslategray;
+    margin: 0;
+    padding: 65px 0 0 0;
+}
+
+#file{
+    display: none;
+}
+
   </style>
 </head>
 <body>
@@ -195,12 +240,24 @@
   <div class="modal-overlay"></div>
   <div class="modal-content">
     <a href="#" class="modal-close">X</a>
+    <div class="dragdrop" >
+      <form id="drag_drop_upload">
+        <input type="hidden" name="do" value="upload">
+        <input type="text" name="folder" id="folder" value="media">
+        <input type="file" name="file" id="file">
+
+        <!-- Drag and Drop container-->
+        <div class="upload-area"  id="uploadfile">
+            <h1 class="text_drag">Drag and Drop file here<br/>Or<br/>Click to select file</h1>
+        </div>
+      </form>
+    </div>
     <div class="lf_header">
       <div class="lf_header_left">
         <h2 class="lf_title">Archivos</h2>
       </div>
       <div class="lf_header_right">
-          <button type="button" class="lf_button"><i class="fa fa-cloud-upload" aria-hidden="true"></i> Subir archivo</button>
+          <button type="button" class="lf_button upload_file"><i class="fa fa-cloud-upload" aria-hidden="true"></i> <span class="toggle_upload_text">Subir archivo</span></button>
           <button type="button" class="lf_button"><i class="fa fa-folder-open-o" aria-hidden="true"></i> Crear carpeta</button>
       </div>
     </div>
@@ -214,7 +271,7 @@
       <h4 class="lf_title">Carpetas</h4>
       <div class="lf_folders">
         <?php
-          $file = "media";
+          $file = ".";
           //$a = scandir($dir,1);
           //print_r($a);
           if (is_dir($file)) {
@@ -289,7 +346,7 @@
       <div class="lf_header_right">
           <button type="button" class="lf_button finish_selection"><i class="fa fa-check" aria-hidden="true"></i> Usar este archivo</button>
       </div>
-    </div>
+  </div>
 </div>
 </div>
 
@@ -316,12 +373,14 @@
           console.log('change folder to: '+$(this).data('folfer'))
           var path = $(this).data('path'), folder = $(this).data('folfer');
           $.get(ajaxurl+"?do=list&file="+folder, function(data, status){
+              $('#folder').val(folder)
               $('.lf_route_position').hide().html('<a href="'+folder+'" class="route_handler">/'+path+'</a>  ').fadeIn()
               $('#lf_holder').hide().html(data).fadeIn()
           });
       })
       $(document).on('click','.route_handler', function(e){
         e.preventDefault()
+          $('#folder').val($(this).attr('href'))
           $.get(ajaxurl+"?do=list&file="+$(this).attr('href'), function(data, status){
               $('.lf_route_position').hide().html('').fadeIn()
               $('#lf_holder').hide().html(data).fadeIn()
@@ -333,6 +392,99 @@
         $(this).addClass('lf_file_selected')
         $('.finish_selection').addClass('lf_file_selected').attr('data-url',$(this).data('fileurl'))
       })
+
+      /////// DRAG DROP START
+      //$.post(ajaxurl,{'do':'upload'}, function(data, status){
+      //    console.log('upload '+data)
+      //});
+
+          // preventing page from redirecting
+          $("html").on("dragover", function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              $("h1").text("Drag here");
+          });
+
+          $("html").on("drop", function(e) { e.preventDefault(); e.stopPropagation(); });
+
+          // Drag enter
+          $('.upload-area').on('dragenter', function (e) {
+              e.stopPropagation();
+              e.preventDefault();
+              $("h1").text("Drop");
+          });
+
+          // Drag over
+          $('.upload-area').on('dragover', function (e) {
+              e.stopPropagation();
+              e.preventDefault();
+              $("h1").text("Drop");
+          });
+
+          // Drop
+          $('.upload-area').on('drop', function (e) {
+              e.stopPropagation();
+              e.preventDefault();
+
+              $("h1").text("Upload");
+
+              //var file = e.originalEvent.dataTransfer.files;
+              //var fd = new FormData();
+
+              //fd.append('file', file[0]);
+
+              uploadData();
+          });
+
+          // Open file selector on div click
+          $("#uploadfile").click(function(){
+              $("#file").click();
+          });
+
+          // file selected
+          $("#file").change(function(){
+             // var fd = new FormData();
+
+              //var files = $('#file')[0].files[0];
+
+              //fd.append('file',files);
+
+              uploadData();
+          })
+
+      // Sending AJAX request and upload file
+      function uploadData(formdata){
+
+         /* $.ajax({
+              url: 'upload.php',
+              type: 'post',
+              data: formdata,
+              contentType: false,
+              processData: false,
+              dataType: 'json',
+              success: function(response){
+                  addThumbnail(response);
+              }
+          });*/
+          $("#drag_drop_upload").submit(function(e) {
+              e.preventDefault();    
+              var formData = new FormData(this);
+
+              $.ajax({
+                  url: ajaxurl,
+                  type: 'POST',
+                  data: formData,
+                  success: function (data) {
+                      console.log(data)
+                  },
+                  cache: false,
+                  contentType: false,
+                  processData: false
+              });
+          });
+      }
+
+      /////// DRAG DROP END
 
       this.find('.finish_selection').click(function(){
         for(var i in target) {
@@ -356,7 +508,7 @@
 }( jQuery ));
 
 jQuery(document).ready(function($){
-  $('.test_btn').click(function(e){
+  //$('.test_btn').click(function(e){
     /* first param open te file manager, second param are method to use the url of file selected
         example:
         bg    -> put as background image the url of file selected
@@ -368,7 +520,10 @@ jQuery(document).ready(function($){
     $( document ).on( "media_selected", function( event, arg ) {
           console.log( arg );
     });
-  })
+    $('.upload_file').click(function(e){
+        $('.dragdrop').slideToggle()
+    })
+  //})
 })
 </script>
 </body>
